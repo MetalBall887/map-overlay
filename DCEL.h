@@ -13,23 +13,43 @@ struct halfEdge {
 	Vertex* origin;
 
 	halfEdge (Pt p, Pt q) : p (p), q (q) {}
+
+	halfEdge () : incidentFace (NULL) {}
 };
 
 struct Face {
 	halfEdge* outer;
 	std::vector <halfEdge*> inner;
-	Edge* leftmost;
+	halfEdge* leftmost;
+
+	~Face () { inner.clear (); }
 };
 
 struct Vertex {
-	double x, y;
+	Pt p;
 	std::vector <halfEdge*> incident;
 
-	Vertex (Pt p) : x (p.x), y (p.y) {}
+	Vertex (Pt p) : p (p) {}
+
+	bool operator < (const Vertex& b) const {
+		return p < b.p;
+	}
+
+	~Vertex () { incident.clear (); }
 };
 
 struct DCEL {
-	vector <Vertex> v;
-	vector <Edge> e;
-	vector <Face> f;
-}
+	std::vector <Vertex*> v;
+	std::vector <halfEdge*> e;
+	std::vector <Face*> f;
+
+	~DCEL () {
+		for (auto a : v) delete a;
+		for (auto a : e) delete a;
+		for (auto a : f) delete a;
+
+		v.clear ();
+		e.clear ();
+		f.clear ();
+	}
+};

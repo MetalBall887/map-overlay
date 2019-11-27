@@ -90,6 +90,10 @@ struct Edge {
 	}
 };
 
+bool lex (const Edge& a, const Edge& b) {
+	return tie (a.p, a.q) < tie (b.p, b.q);
+}
+
 bool _radialComp (const Pt& a, const Pt& b) {
 	if (a.x < 0 && b.x >= 0) return false;
 	if (a.x >= 0 && b.x < 0) return true;
@@ -137,6 +141,7 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 
 		cur = x;
 		if (start.count (x)) {
+			if (res.empty () || res.back () != x) res.push_back (x);
 			if (start[x].size () > 1) res.push_back (x);
 			for (auto a : start[x]) {
 				cout << '+' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
@@ -162,15 +167,21 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 		}
 
 		if (inter.count (x)) {
+			if (res.empty () || res.back () != x) res.push_back (x);
+			sort (inter[x].begin(), inter[x].end(), lex);
+			int it = unique (inter[x].begin(), inter[x].end()) - inter[x].begin ();
+			inter[x].resize (it);
+			cout << it << endl;
 			for (auto a : inter[x]) {
 				cout << 'X' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
-				res2.push_back (Edge (a.p, x, a.origin));
+				if ((x - a.p).dist () >= EPS) res2.push_back (Edge (a.p, x, a.origin));
 				s.erase (a);
 				end[a.q].erase (a);
 			}
 			cur.x += 1e-3;
 
 			for (auto a : inter[x]) {
+				if ((a.q - x).dist () < EPS) continue;
 				s.insert (Edge (x, a.q, a.origin));
 				end[a.q].insert (Edge (x, a.q, a.origin));
 			}
@@ -179,6 +190,7 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 		}
 
 		if (end.count (x)) {
+			if (res.empty () || res.back () != x) res.push_back (x);
 			for (auto a : end[x]) {
 				cout << '-' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 				if ((a.q - a.p).dist () < EPS) continue;
@@ -206,6 +218,13 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 
 		q.erase (q.begin ());
 	}
+
+	sort (res.begin(), res.end());
+	int it = unique (res.begin(), res.end()) - res.begin ();
+	res.resize (it);
+
+	for (auto a : res2)
+		cout << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 
 	return make_pair (res, res2);
 }

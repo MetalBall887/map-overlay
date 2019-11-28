@@ -3,6 +3,7 @@
 using namespace std;
 
 Pt cur;
+bool ins;
 int ptr = 0;
 
 int segmentIntersection (const Pt& s1, const Pt& e1,
@@ -44,7 +45,7 @@ struct Edge {
 
 		A = p.y - q.y;
 		B = q.x - p.x;
-		C = -p.x * A - q.x * B;
+		C = -p.x * A - p.y * B;
 	}
 
 	Edge (double x1, double y1, double x2, double y2) : origin (NULL) {
@@ -54,38 +55,36 @@ struct Edge {
 
 		A = p.y - q.y;
 		B = q.x - p.x;
-		C = -p.x * A - q.x * B;
+		C = -p.x * A - p.y * B;
 	}
 
 	Edge (Pt p, Pt q, halfEdge* e) : p (p), q (q), origin (e) {
 		if (tie (p.y, p.x) > tie (q.y, q.x)) swap (p, q);
 		A = p.y - q.y;
 		B = q.x - p.x;
-		C = -p.x * A - q.x * B;
+		C = -p.x * A - p.y * B;
 	}
 
 	bool operator == (const Edge& b) const {
 		return (p - b.p).dist () < EPS && (q - b.q).dist () < EPS;
 	}
 
-	double eval (double& x) {
-		if (B) return -(A * x + C) / B;
-		else return 1e9;
-	}
-
 	double rev (const double& y) const {
 		if (A) return -(B * y + C) / A;
-		else if (y == p.y) return cur.x;
-		else if (p.y < y) return 1e9;
-		else return -1e9;
+		else if (y == p.y) return p.x;
+		else if (y < p.y) return -1e9;
+		else return 1e9;
 	}
 
 	bool operator < (const Edge& b) const {
 		if (abs (rev (cur.y) - b.rev (cur.y)) > EPS) return rev (cur.y) < b.rev (cur.y);
 		else {
-			if (abs (rev (cur.y + 0.005) - b.rev (cur.y + 0.005)) < EPS) return p.y < b.p.y;
-			if (cur.x <= rev (cur.y)) return rev (cur.y - 0.005) < b.rev (cur.y - 0.005);
-			else return rev (cur.y + 0.005) < b.rev (cur.y + 0.005);
+			Pt cr, cr2;
+			segmentIntersection (p, q, b.p, b.q, cr, cr2);
+			if (cr == p && cr == b.p) return rev (cur.y + 0.005) < b.rev (cur.y + 0.005);
+			if (cr == q && cr == b.q) return rev (cur.y - 0.005) < b.rev (cur.y - 0.005);
+			if (cr == p) return true;
+			else return false;
 		}
 	}
 };
@@ -144,11 +143,11 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 			if (res.empty () || res.back () != x) res.push_back (x);
 			if (start[x].size () > 1) res.push_back (x);
 			for (auto a : start[x]) {
-				cout << '+' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
+				cout << '+' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << ' ' << cur.x << ' ' << cur.y << endl;
 				auto it = s.insert (a).first;
 				auto pr = prev_it (it, s), nx = next_it (it, s);
 				Pt r;
-				
+
 				if (pr != s.end () && intersect (*it, *pr, x.y, r)) {
 					//cout << "a!" << endl;
 					inter[r].push_back (*it);
@@ -166,28 +165,55 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 			start.erase (x);
 		}
 
+		for (auto b : s)
+			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
+		cout << endl;
+
 		if (inter.count (x)) {
 			if (res.empty () || res.back () != x) res.push_back (x);
 			sort (inter[x].begin(), inter[x].end(), lex);
 			int it = unique (inter[x].begin(), inter[x].end()) - inter[x].begin ();
 			inter[x].resize (it);
-			cout << it << endl;
 			for (auto a : inter[x]) {
 				cout << 'X' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 				if ((x - a.p).dist () >= EPS) res2.push_back (Edge (a.p, x, a.origin));
 				s.erase (a);
+				cout << s.size () << endl;
 				end[a.q].erase (a);
 			}
-			cur.x += 1e-3;
+			ins = true;
 
 			for (auto a : inter[x]) {
 				if ((a.q - x).dist () < EPS) continue;
-				s.insert (Edge (x, a.q, a.origin));
+				auto it = s.insert (Edge (x, a.q, a.origin)).first;
+
+				auto pr = prev_it (it, s), nx = next_it (it, s);
+				Pt r;
+
+				if (pr != s.end () && intersect (*it, *pr, x.y, r)) {
+					//cout << "a!" << endl;
+					inter[r].push_back (*it);
+					inter[r].push_back (*pr);
+					q.insert (r.swap ());
+				}
+
+				if (nx != s.end () && intersect (*nx, *it, x.y, r)) {
+					//cout << "a!" << endl;
+					inter[r].push_back (*it);
+					inter[r].push_back (*nx);
+					q.insert (r.swap ());
+				}
+
 				end[a.q].insert (Edge (x, a.q, a.origin));
 			}
+			ins = false;
 
 			inter.erase (x);
 		}
+
+		for (auto b : s)
+			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
+		cout << endl;
 
 		if (end.count (x)) {
 			if (res.empty () || res.back () != x) res.push_back (x);
@@ -207,11 +233,11 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 					inter[r].push_back (*pr);
 					inter[r].push_back (*nx);
 					q.insert (r.swap ());
-				}	
+				}
 			}
 			end.erase (x);
 		}
-
+		cout << cur.x << ' ' << cur.y << ' ' << "AE \n";
 		for (auto b : s)
 			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
 		cout << endl;
@@ -222,9 +248,6 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 	sort (res.begin(), res.end());
 	int it = unique (res.begin(), res.end()) - res.begin ();
 	res.resize (it);
-
-	for (auto a : res2)
-		cout << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 
 	return make_pair (res, res2);
 }

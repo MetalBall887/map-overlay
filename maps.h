@@ -23,9 +23,6 @@ DCEL construct (std::vector <Edge> e) {
 		fst -> twin = snd;
 		snd -> twin = fst;
 
-		fst -> origin = new Vertex (a.q);
-		snd -> origin = new Vertex (a.p);
-
 		origins[a.q].push_back (fst);
 		origins[a.p].push_back (snd);
 
@@ -38,12 +35,14 @@ DCEL construct (std::vector <Edge> e) {
 	}
 
 	for (auto a : res.first) {
-		Vertex vk (a);
+		Vertex* vk = new Vertex (a);
+		D.v.push_back (vk);
 		for (auto b : origins[a]) {
-			vk.incident.push_back (b);
+			vk -> incident.push_back (b);
+			b -> origin = vk;
 		}
 
-		auto& hedgehog = vk.incident;
+		auto& hedgehog = vk -> incident;
 		int n = hedgehog.size ();
 
 		sort (hedgehog.begin (), hedgehog.end (), radialComp);
@@ -57,10 +56,6 @@ DCEL construct (std::vector <Edge> e) {
 		}
 		hedgehog[n - 1] -> next = hedgehog[0] -> twin ;
 		hedgehog[0] -> twin -> prev = hedgehog[n - 1];
-
-		report (hedgehog[n - 1]);
-		report (hedgehog[0] -> twin);
-		cout << endl;
 	}
 
 	set <halfEdge*> went;
@@ -77,12 +72,8 @@ DCEL construct (std::vector <Edge> e) {
 			f -> leftmost = a;
 
 			halfEdge* x = a -> next;
-			cout << "Face: " << a -> incidentFace << " ";
-			report (a);
 
 			while (x != a) {
-				cout << "Face: " << a -> incidentFace << " ";
-				report (x);
 				x -> incidentFace = a -> incidentFace;
 				x = x -> next;
 				if (f -> leftmost -> origin -> p > x -> origin -> p) {
@@ -107,6 +98,7 @@ DCEL construct (std::vector <Edge> e) {
 				waitClosest.push_back ({f -> leftmost -> origin -> p, f});
 			}
 			else {
+				f -> outer = a;
 				if (a -> p > a -> q) edgeClosest.push_back (Edge (a -> q, a -> p, a));
 				x = a -> next;
 				while (x != a) {
@@ -115,6 +107,14 @@ DCEL construct (std::vector <Edge> e) {
 				}
 			}
 		}
+	}
+
+	auto mp = findClosest (edgeClosest, tryClosest);
+
+	for (auto a : mp) {
+		cout << a.first.x << ' ' << a.first.y << ' ';
+		if (a.second) report (a.second);
+		else cout << endl;
 	}
 
 	return D;

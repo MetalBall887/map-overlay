@@ -77,14 +77,15 @@ struct Edge {
 	}
 
 	bool operator < (const Edge& b) const {
+		Pt cr, cr2;
+		segmentIntersection (p, q, b.p, b.q, cr, cr2);
 		if (abs (rev (cur.y) - b.rev (cur.y)) > EPS) return rev (cur.y) < b.rev (cur.y);
 		else {
-			Pt cr, cr2;
-			segmentIntersection (p, q, b.p, b.q, cr, cr2);
-			if (cr == p && cr == b.p) return rev (cur.y + 0.005) < b.rev (cur.y + 0.005);
-			if (cr == q && cr == b.q) return rev (cur.y - 0.005) < b.rev (cur.y - 0.005);
-			if (cr == p) return true;
-			else return false;
+			if (abs (rev (cur.y + 0.005) - b.rev (cur.y + 0.005)) < EPS) return p < b.p;
+			if ((cr - p).dist () < EPS && (cr - b.p).dist () < EPS) return rev (cur.y + 0.005) < b.rev (cur.y + 0.005);
+			if ((cr - p).dist () < EPS) return true;
+			if ((cr - b.p).dist () < EPS) return false;
+			return rev (cur.y - 0.005) < b.rev (cur.y - 0.005);
 		}
 	}
 };
@@ -122,14 +123,13 @@ decltype (auto) prev_it (set <Edge> :: iterator it, set <Edge>& s) {
 pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 	vector <Pt> res;
 	vector <Edge> res2;
-	map < Pt, vector <Edge> > start, inter;
-	map < Pt, set <Edge> > end;
+	map < Pt, vector <Edge> > start, inter, end;
 	set <Pt> q;
 	set <Edge> s;
 
 	for (Edge a : v) {
 		start[a.p].push_back (a);
-		end[a.q].insert (a);
+		end[a.q].push_back (a);
 		q.insert (a.p.swap ());
 		q.insert (a.q.swap ());
 	}
@@ -172,16 +172,15 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 		if (inter.count (x)) {
 			if (res.empty () || res.back () != x) res.push_back (x);
 			sort (inter[x].begin(), inter[x].end(), lex);
-			int it = unique (inter[x].begin(), inter[x].end()) - inter[x].begin ();
-			inter[x].resize (it);
+			int sz = unique (inter[x].begin(), inter[x].end()) - inter[x].begin ();
+			inter[x].resize (sz);
 			for (auto a : inter[x]) {
+				if (s.find (a) == s.end ()) cout << "NOT IN SET\n";
 				cout << 'X' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
-				if ((x - a.p).dist () >= EPS) res2.push_back (Edge (a.p, x, a.origin));
+				if (s.count (a) && (x - a.p).dist () >= EPS) res2.push_back (Edge (a.p, x, a.origin));
 				s.erase (a);
 				cout << s.size () << endl;
-				end[a.q].erase (a);
 			}
-			ins = true;
 
 			for (auto a : inter[x]) {
 				if ((a.q - x).dist () < EPS) continue;
@@ -204,7 +203,7 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 					q.insert (r.swap ());
 				}
 
-				end[a.q].insert (Edge (x, a.q, a.origin));
+				end[a.q].push_back (Edge (x, a.q, a.origin));
 			}
 			ins = false;
 
@@ -217,21 +216,21 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 
 		if (end.count (x)) {
 			if (res.empty () || res.back () != x) res.push_back (x);
+			Edge ex;
 			for (auto a : end[x]) {
+				ex = a;
 				cout << '-' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
-				if ((a.q - a.p).dist () < EPS) continue;
-				res2.push_back (a);
+				if (s.find (a) != s.end () && (a.q - a.p).dist () >= EPS) res2.push_back (a);
 				s.erase (a);
 			}
-
-			if (end[x].size () && s.size () > 1) {
-				auto it = s.find (*end[x].begin ());
-				auto pr = prev_it (it, s), nx = next_it (it, s);
+			auto it = s.lower_bound (ex);
+			if (it != s.end () && end[x].size () && s.size () > 1) {
+				auto pr = prev_it (it, s);
 				Pt r;
 
-				if (nx != s.end () && pr != s.end () && intersect (*nx, *pr, x.y + EPS, r)) {
+				if (pr != s.end () && intersect (*pr, *it, x.y + EPS, r)) {
 					inter[r].push_back (*pr);
-					inter[r].push_back (*nx);
+					inter[r].push_back (*it);
 					q.insert (r.swap ());
 				}
 			}
@@ -303,6 +302,8 @@ map <Pt, halfEdge*> findClosest (vector <Edge> e, vector <Pt> v) {
 			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
 		cout << endl;
 	}
+
+	q.clear (), s.clear (), start.clear (), end.clear (), points.clear ();
 
 	return res;
 }

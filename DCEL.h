@@ -12,7 +12,7 @@ struct halfEdge {
 	Face* incidentFace;
 	Vertex* origin;
 
-	halfEdge (Pt p, Pt q) : p (p), q (q) {}
+	halfEdge (Pt p, Pt q) : p (p), q (q), incidentFace (NULL) {}
 
 	halfEdge () : incidentFace (NULL) {}
 };
@@ -22,7 +22,9 @@ struct Face {
 	std::vector <halfEdge*> inner;
 	halfEdge* leftmost;
 
-	~Face () { inner.clear (); }
+	~Face () {
+		inner.clear ();
+	}
 };
 
 struct Vertex {
@@ -35,7 +37,9 @@ struct Vertex {
 		return p < b.p;
 	}
 
-	~Vertex () { incident.clear (); }
+	~Vertex () {
+		incident.clear ();
+	}
 };
 
 struct DCEL {
@@ -47,9 +51,6 @@ struct DCEL {
 		for (auto a : v) delete a;
 		for (auto a : e) delete a;
 		for (auto a : f) delete a;
-
-		v.clear ();
-		e.clear ();
-		f.clear ();
+		v.clear (), e.clear (), f.clear ();
 	}
 };

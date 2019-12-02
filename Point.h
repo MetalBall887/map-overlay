@@ -8,7 +8,7 @@ struct Point {
 	typedef Point P;
 	T x, y;
 	explicit Point (T x = 0, T y = 0) : x (x), y (y) {}
-	bool operator < (P p) const { return x == p.x ? y < p.y : x < p.x; }
+	bool operator < (P p) const { return y == p.y ? x < p.x : y < p.y; }
 	bool operator > (P p) const { return p < *this; }
 	bool operator == (P p) const { return (*this - p).dist () < EPS; }
 	bool operator != (P p) const { return x != p.x || y != p.y; }
@@ -29,4 +29,3 @@ struct Point {
 	P rotate (double a) const {
 		return P (x * cos (a) - y * sin (a), x * sin (a) + y * cos (a)); }
 };
-

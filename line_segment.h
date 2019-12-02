@@ -130,13 +130,12 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 	for (Edge a : v) {
 		start[a.p].push_back (a);
 		end[a.q].push_back (a);
-		q.insert (a.p.swap ());
-		q.insert (a.q.swap ());
+		q.insert (a.p);
+		q.insert (a.q);
 	}
 
 	while (!q.empty ()) {
 		auto x = *q.begin ();
-		swap (x.x, x.y);
 
 		cur = x;
 		if (start.count (x)) {
@@ -152,14 +151,14 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 					//cout << "a!" << endl;
 					inter[r].push_back (*it);
 					inter[r].push_back (*pr);
-					q.insert (r.swap ());
+					q.insert (r);
 				}
 
 				if (nx != s.end () && intersect (*nx, *it, x.y, r)) {
 					//cout << "a!" << endl;
 					inter[r].push_back (*it);
 					inter[r].push_back (*nx);
-					q.insert (r.swap ());
+					q.insert (r);
 				}
 			}
 			start.erase (x);
@@ -193,14 +192,14 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 					//cout << "a!" << endl;
 					inter[r].push_back (*it);
 					inter[r].push_back (*pr);
-					q.insert (r.swap ());
+					q.insert (r);
 				}
 
 				if (nx != s.end () && intersect (*nx, *it, x.y, r)) {
 					//cout << "a!" << endl;
 					inter[r].push_back (*it);
 					inter[r].push_back (*nx);
-					q.insert (r.swap ());
+					q.insert (r);
 				}
 
 				end[a.q].push_back (Edge (x, a.q, a.origin));
@@ -231,7 +230,7 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 				if (pr != s.end () && intersect (*pr, *it, x.y + EPS, r)) {
 					inter[r].push_back (*pr);
 					inter[r].push_back (*it);
-					q.insert (r.swap ());
+					q.insert (r);
 				}
 			}
 			end.erase (x);
@@ -263,17 +262,17 @@ map <Pt, halfEdge*> findClosest (vector <Edge> e, vector <Pt> v) {
 	for (auto a : e) {
 		start[a.p].push_back (a);
 		end[a.q].push_back (a);
-		q.insert (a.p.swap ());
-		q.insert (a.q.swap ());
+		q.insert (a.p);
+		q.insert (a.q);
 	}
 
 	for (auto a : v) {
 		points[a].push_back (a);
-		q.insert (a.swap ());
+		q.insert (a);
 	}
 
 	for (Pt x : q) {
-		x = x.swap ();
+		x = x;
 		cur = x;
 		cout << "Sweeping line at: " << x.x << ' ' << x.y << endl;
 		if (start.count (x)) {
@@ -285,8 +284,10 @@ map <Pt, halfEdge*> findClosest (vector <Edge> e, vector <Pt> v) {
 
 		if (points.count (x)) {
 			for (auto a : points[x]) {
-				auto it = s.lower_bound (Edge (a.x - EPS, -1e9, a.x - EPS, 1e9));
+				auto it = s.lower_bound (Edge (a.x, a.y, a.x - 1, a.y + EPS));
 				it--;
+				cout << a.x << ' ' << a.y << ' ' << a.x - 1 << ' ' << a.y + EPS << ' ' << endl;
+				cout << '/' << a.x << ' ' << a.y << ' ' << it -> p.x << ' ' << it -> p.y << ' ' << it -> q.x << ' ' << it -> q.y << endl;
 				res[a] = it -> origin;
 			}
 		}

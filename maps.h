@@ -62,7 +62,7 @@ DCEL construct (std::vector <Edge> e) {
 
 	vector <Edge> edgeClosest;
 	vector <Pt> tryClosest;
-	vector < pair <Pt, Face*> > waitClosest;
+	map <Pt, Face*> waitClosest;
 
 	for (halfEdge* a : D.e) {
 		if (!a -> incidentFace) {
@@ -95,11 +95,10 @@ DCEL construct (std::vector <Edge> e) {
 				}
 
 				tryClosest.push_back (f -> leftmost -> origin -> p);
-				waitClosest.push_back ({f -> leftmost -> origin -> p, f});
+				waitClosest[f -> leftmost -> origin -> p] = f;
 			}
 			else {
-				f -> outer = a;
-				if ( ) edgeClosest.push_back (Edge (a -> q, a -> p, a));
+				if (a -> p > a -> q) edgeClosest.push_back (Edge (a -> q, a -> p, a));
 				x = a -> next;
 				while (x != a) {
 					if (x -> p > x -> q) edgeClosest.push_back (Edge (x -> q, x -> p, a));
@@ -110,12 +109,49 @@ DCEL construct (std::vector <Edge> e) {
 	}
 
 	auto mp = findClosest (edgeClosest, tryClosest);
+	map <Face*, vector <Face*> > g;
+	set <Face*> s;
 
-	for (auto a : mp) {
-		cout << a.first.x << ' ' << a.first.y << '+';
-		if (a.second) report (a.second);
-		else cout << endl;
+	for (auto it : mp) {
+		if (it.second) {
+			g[it.second -> incidentFace].push_back (waitClosest[it.first]);
+			s.insert (waitClosest[it.first]);
+			cout << it.second -> incidentFace << ' ' << waitClosest[it.first] << endl;
+		}
 	}
+
+	queue < pair <Face*, Face*> > q;
+	vector <Face*> new_f;
+	for (Face* f : D.f) {
+		if (!s.count (f)) {
+			q.push ({f, f});
+			new_f.push_back (f);
+		}
+	}
+
+	while (!q.empty ()) {
+		Face* x = q.front ().first;
+		Face* p = q.front ().second;
+		q.pop ();
+
+		if (x != p) p -> inner.push_back (x -> leftmost);
+		else { x -> outer = x -> leftmost; }
+
+		auto a = x -> leftmost;
+		a -> incidentFace = p;
+		auto b = a -> next;
+		while (b != a) { b -> incidentFace = p; b = b -> next;}
+
+		for (auto to : g[x]) {
+			q.push ({to, p});
+		}
+	}
+
+	D.f.clear ();
+
+	D.f = new_f;
+
+
 
 	return D;
 }

@@ -13,4 +13,21 @@ int main () {
 	}
 
 	auto A = construct (v);
+
+	for (Face* f : A.f) {
+		for (auto k : f -> inner) {
+			cout << f << ' ';
+			report (k);
+			for (halfEdge* e = k -> next; e != k; e = e -> next) {
+				cout << f << ' ';
+				report (e);
+			}
+		}
+		cout << f << ' ';
+		report (f -> outer);
+		for (halfEdge* e = f -> outer -> next; e != f -> outer; e = e -> next) {
+			cout << f << ' ';
+			report (e);
+		}
+	}
 }

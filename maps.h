@@ -99,7 +99,7 @@ DCEL construct (std::vector <Edge> e) {
 			}
 			else {
 				f -> outer = a;
-				if ( ) edgeClosest.push_back (Edge (a -> q, a -> p, a));
+				if (a -> p > a -> q) edgeClosest.push_back (Edge (a -> q, a -> p, a));
 				x = a -> next;
 				while (x != a) {
 					if (x -> p > x -> q) edgeClosest.push_back (Edge (x -> q, x -> p, a));
@@ -112,8 +112,9 @@ DCEL construct (std::vector <Edge> e) {
 	auto mp = findClosest (edgeClosest, tryClosest);
 
 	for (auto a : mp) {
-		cout << a.first.x << ' ' << a.first.y << '+';
+		cout << a.first.x << ' ' << a.first.y << '+ ';
 		if (a.second) report (a.second);
+		else cout << "Outer bound";
 		else cout << endl;
 	}
 

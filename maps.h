@@ -50,9 +50,6 @@ DCEL construct (std::vector <Edge> e) {
 		for (int i = 0; i < n - 1; i++) {
 			hedgehog[i] -> next = hedgehog[i + 1] -> twin;
 			hedgehog[i + 1] -> twin -> prev = hedgehog[i];
-
-			report (hedgehog[i]);
-			report (hedgehog[i + 1] -> twin);
 		}
 		hedgehog[n - 1] -> next = hedgehog[0] -> twin ;
 		hedgehog[0] -> twin -> prev = hedgehog[n - 1];
@@ -67,6 +64,7 @@ DCEL construct (std::vector <Edge> e) {
 	for (halfEdge* a : D.e) {
 		if (!a -> incidentFace) {
 			Face* f = new Face ();
+			f -> painted = false;
 			a -> incidentFace = f;
 			D.f.push_back (f);
 			f -> leftmost = a;
@@ -89,8 +87,10 @@ DCEL construct (std::vector <Edge> e) {
 			if ((pa - pb).cross (pc - pb) >= 0 || f -> leftmost -> next == f -> leftmost -> twin) {
 				if (a -> p < a -> q) edgeClosest.push_back (Edge (a -> p, a -> q, a));
 				x = a -> next;
+				report (a);
 				while (x != a) {
-					if (x -> p < x -> q) edgeClosest.push_back (Edge (x -> p, x -> q, a));
+					report (x);
+					if (x -> p > x -> q) edgeClosest.push_back (Edge (x -> q, x -> p, a));
 					x = x -> next;
 				}
 
@@ -121,10 +121,10 @@ DCEL construct (std::vector <Edge> e) {
 	}
 
 	for (auto a : mp) {
-		cout << a.first.x << ' ' << a.first.y << '+ ';
+		cout << a.first.x << ' ' << a.first.y << '+';
 		if (a.second) report (a.second);
 		else cout << "Outer bound";
-		else cout << endl;
+	}
 
 	queue < pair <Face*, Face*> > q;
 	vector <Face*> new_f;
@@ -160,4 +160,51 @@ DCEL construct (std::vector <Edge> e) {
 
 
 	return D;
+}
+
+void fill (DCEL& D, vector <Pt> p) {
+	vector <Edge> edges;
+	for (Face* f : D.f) {
+		auto a = f -> outer;
+
+		if (a -> q < a -> p) edges.push_back (Edge (a -> q, a -> p, a));
+		auto x = a -> next;
+
+		while (x != a) {
+			if (x -> q > x -> p) edges.push_back (Edge (x -> q, x -> p, x));
+			x = x -> next;
+		}
+
+		for (auto a : f -> inner) {
+			if (a -> p < a -> q) edges.push_back (Edge (a -> p, a -> q, a));
+			auto x = a -> next;
+
+			while (x != a) {
+				if (x -> p > x -> q) edges.push_back (Edge (x -> p, x -> q, x));
+				x = x -> next;
+			}
+		}
+	}
+
+	auto res = findClosest (edges, p);
+
+	for (auto a : res) {
+		a.second -> incidentFace -> painted = true;
+	}
+
+	for (auto f : D.f) {
+		if (f -> painted == false) continue;
+
+		auto a = f -> outer;
+
+		report (a);
+		auto x = a -> next;
+
+		while (x != a) {
+			report (x);
+			x = x -> next;
+		}
+
+		cout << endl;
+	}
 }

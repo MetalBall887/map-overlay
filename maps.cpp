@@ -12,6 +12,11 @@ int main () {
 		v.push_back (Edge (x1, y1, x2, y2));
 	}
 
+	v.push_back (Edge (1e5, 1e5, -1e5, 1e5));
+	v.push_back (Edge (-1e5, 1e5, -1e5, -1e5));
+	v.push_back (Edge (-1e5, -1e5, 1e5, -1e5));
+	v.push_back (Edge (1e5, -1e5, 1e5, 1e5));
+
 	auto A = construct (v);
 
 	for (Face* f : A.f) {

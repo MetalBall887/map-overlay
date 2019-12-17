@@ -18,6 +18,7 @@ struct halfEdge {
 };
 
 struct Face {
+	bool painted;
 	halfEdge* outer;
 	std::vector <halfEdge*> inner;
 	halfEdge* leftmost;

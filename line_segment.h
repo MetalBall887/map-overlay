@@ -251,30 +251,32 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 }
 
 map <Pt, halfEdge*> findClosest (vector <Edge> e, vector <Pt> v) {
-	set <Pt> q;
+	set <double> q;
 	set <Edge> s;
-	map < Pt, vector <Edge> > start, end;
-	map < Pt, vector <Pt> > points;
+	map < double, vector <Edge> > start, end;
+	map < double, vector <Pt> > points;
 	map <Pt, halfEdge*> res;
-	Edge border (-1e5, -1e9, -1e5, 1e9);
+	Edge border (-1e6, -1e9, -1e6, 1e9);
 	s.insert (border);
 
 	for (auto a : e) {
-		start[a.p].push_back (a);
-		end[a.q].push_back (a);
-		q.insert (a.p);
-		q.insert (a.q);
+		start[a.p.y].push_back (a);
+		end[a.q.y].push_back (a);
+		q.insert (a.p.y);
+		q.insert (a.q.y);
+		cout << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 	}
+	cout << endl;
 
 	for (auto a : v) {
-		points[a].push_back (a);
-		q.insert (a);
+		cout << a.x << ' ' << a.y << endl;
+		points[a.y].push_back (a);
+		q.insert (a.y);
 	}
 
-	for (Pt x : q) {
-		x = x;
-		cur = x;
-		cout << "Sweeping line at: " << x.x << ' ' << x.y << endl;
+	for (auto x : q) {
+		cur = Pt (0, x);
+		cout << "Sweeping line at: " << x << endl;
 		if (start.count (x)) {
 			for (auto a : start[x]) {
 				cout << '+' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
@@ -286,22 +288,21 @@ map <Pt, halfEdge*> findClosest (vector <Edge> e, vector <Pt> v) {
 			for (auto a : points[x]) {
 				auto it = s.lower_bound (Edge (a.x, a.y, a.x - 1, a.y + EPS));
 				it--;
-				cout << a.x << ' ' << a.y << ' ' << a.x - 1 << ' ' << a.y + EPS << ' ' << endl;
 				cout << '/' << a.x << ' ' << a.y << ' ' << it -> p.x << ' ' << it -> p.y << ' ' << it -> q.x << ' ' << it -> q.y << endl;
 				res[a] = it -> origin;
-			}
-		}
-
-		if (end.count (x)) {
-			for (auto a : end[x]) {
-				cout << '-' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
-				s.erase (a);
 			}
 		}
 
 		for (auto b : s)
 			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
 		cout << endl;
+
+		if (end.count (x)) {
+			for (auto a : end[x]) {
+				cout << '-' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
+				//s.erase (a);
+			}
+		}
 	}
 
 	q.clear (), s.clear (), start.clear (), end.clear (), points.clear ();

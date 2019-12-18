@@ -70,32 +70,36 @@ DCEL construct (std::vector <Edge> e) {
 			f -> leftmost = a;
 
 			halfEdge* x = a -> next;
+			report (a);
 
 			while (x != a) {
+				report (x);
 				x -> incidentFace = a -> incidentFace;
-				x = x -> next;
-				if (f -> leftmost -> origin -> p > x -> origin -> p) {
+				if (tie (f -> leftmost -> q.x, f -> leftmost -> q.y) > tie (x -> q.x, x -> q.y)) {
 					f -> leftmost = x;
 				}
+				x = x -> next;
 			}
 
-			Pt pa = f -> leftmost -> twin -> origin -> p;
-			Pt pb = f -> leftmost -> origin -> p;
-			Pt pc = f -> leftmost -> next -> origin -> p;
+			Pt pa = f -> leftmost -> twin -> q;
+			Pt pb = f -> leftmost -> q;
+			Pt pc = f -> leftmost -> next -> q;
+
+			cout << f << ' ' << (pb - pa).cross (pc - pb) << endl;
+			report (f -> leftmost);
+			report (f -> leftmost -> next);
 
 
-			if ((pa - pb).cross (pc - pb) >= 0 || f -> leftmost -> next == f -> leftmost -> twin) {
+			if ((pa - pb).cross (pc - pb) <= 0 || f -> leftmost -> next == f -> leftmost -> twin) {
 				if (a -> p < a -> q) edgeClosest.push_back (Edge (a -> p, a -> q, a));
 				x = a -> next;
-				report (a);
 				while (x != a) {
-					report (x);
 					if (x -> p > x -> q) edgeClosest.push_back (Edge (x -> q, x -> p, a));
 					x = x -> next;
 				}
 
-				tryClosest.push_back (f -> leftmost -> origin -> p);
-				waitClosest[f -> leftmost -> origin -> p] = f;
+				tryClosest.push_back (f -> leftmost -> q);
+				waitClosest[f -> leftmost -> q] = f;
 			}
 			else {
 				if (a -> p > a -> q) edgeClosest.push_back (Edge (a -> q, a -> p, a));

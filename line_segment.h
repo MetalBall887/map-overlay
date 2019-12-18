@@ -300,7 +300,7 @@ map <Pt, halfEdge*> findClosest (vector <Edge> e, vector <Pt> v) {
 		if (end.count (x)) {
 			for (auto a : end[x]) {
 				cout << '-' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
-				//s.erase (a);
+				s.erase (a);
 			}
 		}
 	}

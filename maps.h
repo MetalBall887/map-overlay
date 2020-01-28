@@ -19,7 +19,8 @@ DCEL construct (std::vector <Edge> e) {
 	map <Pt, std::vector <halfEdge*> > origins;
 
 	for (auto a : res.second) {
-		halfEdge *fst = new halfEdge (a.p, a.q), *snd  = new halfEdge (a.q, a.p);
+		halfEdge *fst = new halfEdge (a.p, a.q, NULL);
+		halfEdge *snd = new halfEdge (a.q, a.p, NULL);
 		fst -> twin = snd;
 		snd -> twin = fst;
 
@@ -90,7 +91,8 @@ DCEL construct (std::vector <Edge> e) {
 			report (f -> leftmost -> next);
 
 
-			if ((pa - pb).cross (pc - pb) <= 0 || f -> leftmost -> next == f -> leftmost -> twin) {
+			if ((pa - pb).cross (pc - pb) > 0 || f -> leftmost -> next == f -> leftmost -> twin) {
+				cout << "to_inner\n";
 				if (a -> p < a -> q) edgeClosest.push_back (Edge (a -> p, a -> q, a));
 				x = a -> next;
 				while (x != a) {
@@ -211,4 +213,7 @@ void fill (DCEL& D, vector <Pt> p) {
 
 		cout << endl;
 	}
+}
+
+DCEL merge (DCEL a, DCEL b) {
 }

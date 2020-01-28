@@ -8,12 +8,13 @@ struct Vertex;
 
 struct halfEdge {
 	Pt p, q;
-	halfEdge *twin, *next, *prev;
+	halfEdge *twin, *next, *prev, *old_edge;
 	Face* incidentFace;
 	Vertex* origin;
 
-	halfEdge (Pt p, Pt q) : p (p), q (q), incidentFace (NULL) {}
-
+	halfEdge (Pt p, Pt q, halfEdge* o) : p (p), q (q), incidentFace (NULL), 
+		old_edge (o) {}
+	
 	halfEdge () : incidentFace (NULL) {}
 };
 

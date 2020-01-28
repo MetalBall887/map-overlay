@@ -65,6 +65,13 @@ struct Edge {
 		C = -p.x * A - p.y * B;
 	}
 
+	Edge (halfEdge& e) : p (e.p), q (e.q), origin (&e) {
+		if (tie (p.y, p.x) > tie (q.y, q.x)) {
+			origin = e.twin;
+			swap (q, p);
+		}
+	}
+
 	bool operator == (const Edge& b) const {
 		return (p - b.p).dist () < EPS && (q - b.q).dist () < EPS;
 	}
@@ -120,7 +127,41 @@ decltype (auto) prev_it (set <Edge> :: iterator it, set <Edge>& s) {
 	return it;
 }
 
+vector <Edge> resolveOverlap (vector <Edge> e) {
+	vector <Edge> ans;
+	map <vector <double>, vector<pair <Pt, bool>>> m;
+	int cnt = 0;
+
+	for (auto x : e) {
+		double A = x.A, B = x.B, C = x.C;
+		if (A) A /= A, B /= A, C /= A;
+		else B /= B, C /= B;
+		vector <double> v {A, B, C};
+		cout << v[0] << ' ' << v[1] << ' ' << v[2] << endl;
+		m[v].push_back ({x.p, true});
+		m[v].push_back ({x.q, false});
+	}
+
+	for (auto a : m) {
+		cout << a.first[0] << ' ' << a.first[1] << ' ' << a.first[2] << endl;
+		auto& v = a.second;
+		sort (v.begin(), v.end());
+		for (int i = 0; i < v.size (); i++) {
+			if (v[i].second) cnt++;
+			else cnt--;
+			if (cnt) {
+				if (v[i].first != v[i+1].first)
+					ans.push_back (Edge (v[i].first, v[i+1].first, NULL));
+				cout << v[i].first.x << ' ' << v[i].first.y << ' ' << v[i+1].first.x << ' ' << v[i+1].first.y << endl;
+			}
+		}
+	}
+
+	return ans;
+}
+
 pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
+	v = resolveOverlap (v);
 	vector <Pt> res;
 	vector <Edge> res2;
 	map < Pt, vector <Edge> > start, inter, end;
@@ -236,13 +277,11 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 			end.erase (x);
 		}
 		cout << cur.x << ' ' << cur.y << ' ' << "AE \n";
+		cout << q.size () << endl;
 		for (auto b : s)
 			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
-		cout << endl;
-
 		q.erase (q.begin ());
 	}
-
 	sort (res.begin(), res.end());
 	int it = unique (res.begin(), res.end()) - res.begin ();
 	res.resize (it);

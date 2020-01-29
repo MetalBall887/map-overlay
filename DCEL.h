@@ -6,20 +6,36 @@ struct Face;
 struct halfEdge;
 struct Vertex;
 
+struct Edge {
+	Pt p, q;
+	double A, B, C;
+	halfEdge* origin;
+
+	Edge ();
+	Edge (double x1, double y1, double x2, double y2);
+	Edge (Pt p, Pt q, halfEdge* e);
+	Edge (const halfEdge& e);
+
+	double rev (const double& y) const;
+
+	bool operator == (const Edge& b) const;
+	bool operator < (const Edge& b) const;
+};
+
 struct halfEdge {
 	Pt p, q;
-	halfEdge *twin, *next, *prev, *old_edge;
+	halfEdge *twin, *next, *prev;
 	Face* incidentFace;
 	Vertex* origin;
+	bool is_a, is_b;
 
-	halfEdge (Pt p, Pt q, halfEdge* o) : p (p), q (q), incidentFace (NULL), 
-		old_edge (o) {}
+	halfEdge (Pt p, Pt q) : p (p), q (q), incidentFace (NULL) {}
 	
 	halfEdge () : incidentFace (NULL) {}
 };
 
 struct Face {
-	bool painted;
+	bool painted, is_a, is_b;
 	halfEdge* outer;
 	std::vector <halfEdge*> inner;
 	halfEdge* leftmost;

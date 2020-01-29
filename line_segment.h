@@ -33,69 +33,58 @@ int segmentIntersection (const Pt& s1, const Pt& e1,
 	return 1;
 }
 
-struct Edge {
-	Pt p, q;
-	double A, B, C;
-	halfEdge* origin;
+Edge::Edge () {
+	p = Pt (0, 0);
+	q = Pt (0, 0);
+	if (tie (p.y, p.x) > tie (q.y, q.x)) swap (p, q);
 
-	Edge () {
-		p = Pt (0, 0);
-		q = Pt (0, 0);
-		if (tie (p.y, p.x) > tie (q.y, q.x)) swap (p, q);
+	A = p.y - q.y;
+	B = q.x - p.x;
+	C = -p.x * A - p.y * B;
+}
 
-		A = p.y - q.y;
-		B = q.x - p.x;
-		C = -p.x * A - p.y * B;
+Edge::Edge (double x1, double y1, double x2, double y2) : origin (NULL) {
+	p = Pt (x1, y1);
+	q = Pt (x2, y2);
+	if (tie (p.y, p.x) > tie (q.y, q.x)) swap (p, q);
+
+	A = p.y - q.y;
+	B = q.x - p.x;
+	C = -p.x * A - p.y * B;
+}
+
+Edge::Edge (Pt p, Pt q, halfEdge* e) : p (p), q (q), origin (e) {
+	if (p > q) swap (p, q);
+	A = p.y - q.y;
+	B = q.x - p.x;
+	C = -p.x * A - p.y * B;
+}
+
+Edge::Edge (const halfEdge& e) : p (e.p), q (e.q), origin (NULL) {}
+
+bool Edge::operator == (const Edge& b) const {
+	return (p - b.p).dist () < EPS && (q - b.q).dist () < EPS;
+}
+
+double Edge::rev (const double& y) const {
+	if (A) return -(B * y + C) / A;
+	else if (y == p.y) return p.x;
+	else if (y < p.y) return -1e9;
+	else return 1e9;
+}
+
+bool Edge::operator < (const Edge& b) const {
+	Pt cr, cr2;
+	segmentIntersection (p, q, b.p, b.q, cr, cr2);
+	if (abs (rev (cur.y) - b.rev (cur.y)) > EPS) return rev (cur.y) < b.rev (cur.y);
+	else {
+		if (abs (rev (cur.y + 0.005) - b.rev (cur.y + 0.005)) < EPS) return p < b.p;
+		if ((cr - p).dist () < EPS && (cr - b.p).dist () < EPS) return rev (cur.y + 0.005) < b.rev (cur.y + 0.005);
+		if ((cr - p).dist () < EPS) return true;
+		if ((cr - b.p).dist () < EPS) return false;
+		return rev (cur.y - 0.005) < b.rev (cur.y - 0.005);
 	}
-
-	Edge (double x1, double y1, double x2, double y2) : origin (NULL) {
-		p = Pt (x1, y1);
-		q = Pt (x2, y2);
-		if (tie (p.y, p.x) > tie (q.y, q.x)) swap (p, q);
-
-		A = p.y - q.y;
-		B = q.x - p.x;
-		C = -p.x * A - p.y * B;
-	}
-
-	Edge (Pt p, Pt q, halfEdge* e) : p (p), q (q), origin (e) {
-		if (tie (p.y, p.x) > tie (q.y, q.x)) swap (p, q);
-		A = p.y - q.y;
-		B = q.x - p.x;
-		C = -p.x * A - p.y * B;
-	}
-
-	Edge (halfEdge& e) : p (e.p), q (e.q), origin (&e) {
-		if (tie (p.y, p.x) > tie (q.y, q.x)) {
-			origin = e.twin;
-			swap (q, p);
-		}
-	}
-
-	bool operator == (const Edge& b) const {
-		return (p - b.p).dist () < EPS && (q - b.q).dist () < EPS;
-	}
-
-	double rev (const double& y) const {
-		if (A) return -(B * y + C) / A;
-		else if (y == p.y) return p.x;
-		else if (y < p.y) return -1e9;
-		else return 1e9;
-	}
-
-	bool operator < (const Edge& b) const {
-		Pt cr, cr2;
-		segmentIntersection (p, q, b.p, b.q, cr, cr2);
-		if (abs (rev (cur.y) - b.rev (cur.y)) > EPS) return rev (cur.y) < b.rev (cur.y);
-		else {
-			if (abs (rev (cur.y + 0.005) - b.rev (cur.y + 0.005)) < EPS) return p < b.p;
-			if ((cr - p).dist () < EPS && (cr - b.p).dist () < EPS) return rev (cur.y + 0.005) < b.rev (cur.y + 0.005);
-			if ((cr - p).dist () < EPS) return true;
-			if ((cr - b.p).dist () < EPS) return false;
-			return rev (cur.y - 0.005) < b.rev (cur.y - 0.005);
-		}
-	}
-};
+}
 
 bool lex (const Edge& a, const Edge& b) {
 	return tie (a.p, a.q) < tie (b.p, b.q);
@@ -127,9 +116,19 @@ decltype (auto) prev_it (set <Edge> :: iterator it, set <Edge>& s) {
 	return it;
 }
 
+struct comp_triplets {
+	bool operator () (const vector <double>& a, const vector <double>& b) const {
+		for (int i = 0; i < 3; i++) {
+			if (a[i] + EPS < b[i]) return true;
+			if (abs (a[i] - b[i]) > EPS) return false;
+		}
+		return false;
+	}
+};
+
 vector <Edge> resolveOverlap (vector <Edge> e) {
 	vector <Edge> ans;
-	map <vector <double>, vector<pair <Pt, bool>>> m;
+	map <vector <double>, vector<pair <Pt, bool>>, comp_triplets> m;
 	int cnt = 0;
 
 	for (auto x : e) {
@@ -289,7 +288,8 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 	return make_pair (res, res2);
 }
 
-map <Pt, halfEdge*> findClosest (vector <Edge> e, vector <Pt> v) {
+map <Pt, halfEdge*> findClosest (vector <halfEdge*> edges, vector <Pt> v) {
+	vector <Edge> e;
 	set <double> q;
 	set <Edge> s;
 	map < double, vector <Edge> > start, end;
@@ -297,6 +297,12 @@ map <Pt, halfEdge*> findClosest (vector <Edge> e, vector <Pt> v) {
 	map <Pt, halfEdge*> res;
 	Edge border (-1e6, -1e9, -1e6, 1e9);
 	s.insert (border);
+
+	for (auto a : edges) {
+		if (a -> p > a -> q) swap (a -> p, a -> q);
+		e.push_back (Edge (a -> p, a -> q, a));
+		assert (e.back ().p < e.back ().q);
+	}
 
 	for (auto a : e) {
 		start[a.p.y].push_back (a);

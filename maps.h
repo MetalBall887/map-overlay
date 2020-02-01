@@ -7,10 +7,6 @@ bool radialComp (halfEdge* a, halfEdge* b) {
 	return _radialComp (a -> p - a -> q, b -> p - b -> q);
 }
 
-void report (halfEdge* a) {
-	cout << a -> p.x << ' ' << a -> p.y << ' ' << a -> q.x << ' ' << a -> q.y << endl;
-}
-
 DCEL construct (std::vector <Edge> e) {
 	auto res = lineSegInt (e);
 
@@ -19,6 +15,7 @@ DCEL construct (std::vector <Edge> e) {
 	map <Pt, std::vector <halfEdge*> > origins;
 
 	for (auto a : res.second) {
+		assert (a.p < a.q);
 		halfEdge *fst = new halfEdge (a.p, a.q);
 		halfEdge *snd = new halfEdge (a.q, a.p);
 		fst -> twin = snd;
@@ -29,10 +26,6 @@ DCEL construct (std::vector <Edge> e) {
 
 		D.e.push_back (fst);
 		D.e.push_back (snd);
-		cout << "-> ";
-		report (fst);
-		cout << "<- ";
-		report (snd);
 	}
 
 	for (auto a : res.first) {
@@ -52,7 +45,8 @@ DCEL construct (std::vector <Edge> e) {
 			hedgehog[i] -> next = hedgehog[i + 1] -> twin;
 			hedgehog[i + 1] -> twin -> prev = hedgehog[i];
 		}
-		hedgehog[n - 1] -> next = hedgehog[0] -> twin ;
+
+		hedgehog[n - 1] -> next = hedgehog[0] -> twin;
 		hedgehog[0] -> twin -> prev = hedgehog[n - 1];
 	}
 
@@ -71,10 +65,8 @@ DCEL construct (std::vector <Edge> e) {
 			f -> leftmost = a;
 
 			halfEdge* x = a -> next;
-			report (a);
 
 			while (x != a) {
-				report (x);
 				x -> incidentFace = a -> incidentFace;
 				if (tie (f -> leftmost -> q.x, f -> leftmost -> q.y) > tie (x -> q.x, x -> q.y)) {
 					f -> leftmost = x;
@@ -86,17 +78,12 @@ DCEL construct (std::vector <Edge> e) {
 			Pt pb = f -> leftmost -> q;
 			Pt pc = f -> leftmost -> next -> q;
 
-			cout << f << ' ' << (pb - pa).cross (pc - pb) << endl;
-			report (f -> leftmost);
-			report (f -> leftmost -> next);
-
 
 			if ((pa - pb).cross (pc - pb) > 0 || f -> leftmost -> next == f -> leftmost -> twin) {
-				cout << "to_inner\n";
 				if (a -> p < a -> q) edgeClosest.push_back (a);
 				x = a -> next;
 				while (x != a) {
-					if (x -> p > x -> q) edgeClosest.push_back (x);
+					if (x -> p < x -> q) edgeClosest.push_back (x);
 					x = x -> next;
 				}
 
@@ -122,14 +109,9 @@ DCEL construct (std::vector <Edge> e) {
 		if (it.second) {
 			g[it.second -> incidentFace].push_back (waitClosest[it.first]);
 			s.insert (waitClosest[it.first]);
-			cout << it.second -> incidentFace << ' ' << waitClosest[it.first] << endl;
+		} else {
+			D.outer_bound = waitClosest[it.first];
 		}
-	}
-
-	for (auto a : mp) {
-		cout << a.first.x << ' ' << a.first.y << '+';
-		if (a.second) report (a.second);
-		else cout << "Outer bound";
 	}
 
 	queue < pair <Face*, Face*> > q;
@@ -159,6 +141,7 @@ DCEL construct (std::vector <Edge> e) {
 		}
 	}
 
+
 	D.f.clear ();
 
 	D.f = new_f;
@@ -173,11 +156,11 @@ void fill (DCEL& D, vector <Pt> p) {
 	for (Face* f : D.f) {
 		auto a = f -> outer;
 
-		if (a -> q < a -> p) edges.push_back (a);
+		if (a -> p > a -> q) edges.push_back (a);
 		auto x = a -> next;
 
 		while (x != a) {
-			if (x -> q > x -> p) edges.push_back (x);
+			if (x -> p > x -> q) edges.push_back (x);
 			x = x -> next;
 		}
 
@@ -186,7 +169,7 @@ void fill (DCEL& D, vector <Pt> p) {
 			auto x = a -> next;
 
 			while (x != a) {
-				if (x -> p > x -> q) edges.push_back (x);
+				if (x -> p < x -> q) edges.push_back (x);
 				x = x -> next;
 			}
 		}
@@ -196,22 +179,6 @@ void fill (DCEL& D, vector <Pt> p) {
 
 	for (auto a : res) {
 		a.second -> incidentFace -> painted = true;
-	}
-
-	for (auto f : D.f) {
-		if (f -> painted == false) continue;
-
-		auto a = f -> outer;
-
-		report (a);
-		auto x = a -> next;
-
-		while (x != a) {
-			report (x);
-			x = x -> next;
-		}
-
-		cout << endl;
 	}
 }
 
@@ -247,17 +214,21 @@ DCEL merge (DCEL& A, DCEL& B) {
 	vector <Pt> check_a, check_b;
 	int cnt = 0;
 
-	bool is_a, is_b;
+	halfEdge *is_a = NULL, *is_b = NULL;
 
-	for (auto e : A.e)
-		v.push_back (*e);
+	for (auto e : A.e) {
+		if (e -> p < e -> q)
+			v.push_back (*e);
+	}
 
-	for (auto e : B.e)
-		v.push_back (*e);
+	for (auto e : B.e) {
+		if (e -> p < e -> q)
+			v.push_back (*e);
+	}
 
 	DCEL AB = construct (v);
 
-	for (auto& x : A.e) {
+	/*for (auto& x : A.e) {
 		if (x -> p > x -> q) continue;
 		vector <double> v = get_line (x -> p, x -> q);
 
@@ -287,11 +258,11 @@ DCEL merge (DCEL& A, DCEL& B) {
 		for (auto x : v) {
 			if (x.flag == 0) is_a = NULL;
 			if (x.flag == 1) is_a = x.ref;
-			if (x.flag == 2) is_a = NULL;
-			if (x.flag == 3) is_a = x.ref;
+			if (x.flag == 2) is_b = NULL;
+			if (x.flag == 3) is_b = x.ref;
 			if (x.flag == 4) {
-				x.ref -> is_a = is_a;
-				x.ref -> is_b = is_b;
+				x.ref -> is_a = (is_a ? is_a -> incidentFace : NULL);
+				x.ref -> is_b = (is_b ? is_b -> incidentFace : NULL);
 			}
 		}
 	}
@@ -308,13 +279,13 @@ DCEL merge (DCEL& A, DCEL& B) {
 		assert (f -> is_a || f -> is_b);
 
 		if (!f -> is_a) {
-			wait_a[(l -> origin -> p) + (l -> q - l -> p) / 2.0] = f;
-			check_a.push_back ((l -> origin -> p) + (l -> q - l -> p) / 2.0);
+			wait_a[(l -> p + l -> q) / 2.0] = f;
+			check_a.push_back ((l -> p + l -> q) / 2.0);
 		}
 
-		if (!f -> is_a) {
-			wait_b[(l -> origin -> p) + (l -> q - l -> p) / 2.0] = f;
-			check_b.push_back ((l -> origin -> p) + (l -> q - l -> p) / 2.0);
+		if (!f -> is_b) {
+			wait_b[(l -> p + l -> q) / 2.0] = f;
+			check_b.push_back ((l -> p + l -> q) / 2.0);
 		}
 	}
 
@@ -325,11 +296,11 @@ DCEL merge (DCEL& A, DCEL& B) {
 		for (Face* f : current.f) {
 			auto a = f -> outer;
 
-			if (a -> q < a -> p) edges.push_back (a);
+			if (a -> p > a -> q) edges.push_back (a);
 			auto x = a -> next;
 
 			while (x != a) {
-				if (x -> q > x -> p) edges.push_back (x);
+				if (x -> p > x -> q) edges.push_back (x);
 				x = x -> next;
 			}
 
@@ -338,7 +309,7 @@ DCEL merge (DCEL& A, DCEL& B) {
 				auto x = a -> next;
 
 				while (x != a) {
-					if (x -> p > x -> q) edges.push_back (x);
+					if (x -> p < x -> q) edges.push_back (x);
 					x = x -> next;
 				}
 			}
@@ -348,14 +319,16 @@ DCEL merge (DCEL& A, DCEL& B) {
 
 		if (i) {
 			for (auto x : wait_a) {
-				x.second -> is_a = res[x.first];
+				if (res[x.first]) x.second -> is_a = res[x.first] -> incidentFace;
+				else x.second -> is_a = A.outer_bound;
 			}
 		} else {
 			for (auto x : wait_b) {
-				x.second -> is_b = res[x.first];
+				if (res[x.first]) x.second -> is_a = res[x.first] -> incidentFace;
+				else x.second -> is_a = B.outer_bound;
 			}
 		}
-	}
+	}*/
 
 	return AB;
 }

@@ -11,7 +11,7 @@ struct Point {
 	bool operator < (P p) const { return ((y == p.y ? x < p.x : y < p.y) && p != *this); }
 	bool operator > (P p) const { return p < *this; }
 	bool operator == (P p) const { return (*this - p).dist () < EPS; }
-	bool operator != (P p) const { return x != p.x || y != p.y; }
+	bool operator != (P p) const { return (*this - p).dist () >= EPS; }
 	P operator + (P p) const { return P (x + p.x, y + p.y); }
 	P operator - (P p) const { return P (x - p.x, y - p.y); }
 	P operator * (T d) const { return P (x * d, y * d); }

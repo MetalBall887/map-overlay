@@ -3,8 +3,14 @@
 using namespace std;
 
 Pt cur;
-bool ins;
-int ptr = 0;
+
+void report (halfEdge* a) {
+	cout << a -> p.x << ' ' << a -> p.y << ' ' << a -> q.x << ' ' << a -> q.y << endl;
+}
+
+void report (Edge a) {
+	cout << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
+}
 
 int segmentIntersection (const Pt& s1, const Pt& e1,
 		const Pt& s2, const Pt& e2, Pt& r1, Pt& r2) {
@@ -36,7 +42,7 @@ int segmentIntersection (const Pt& s1, const Pt& e1,
 Edge::Edge () {
 	p = Pt (0, 0);
 	q = Pt (0, 0);
-	if (tie (p.y, p.x) > tie (q.y, q.x)) swap (p, q);
+	if (p > q) swap (p, q);
 
 	A = p.y - q.y;
 	B = q.x - p.x;
@@ -46,21 +52,27 @@ Edge::Edge () {
 Edge::Edge (double x1, double y1, double x2, double y2) : origin (NULL) {
 	p = Pt (x1, y1);
 	q = Pt (x2, y2);
-	if (tie (p.y, p.x) > tie (q.y, q.x)) swap (p, q);
+	if (p > q) swap (p, q);
 
 	A = p.y - q.y;
 	B = q.x - p.x;
 	C = -p.x * A - p.y * B;
 }
 
-Edge::Edge (Pt p, Pt q, halfEdge* e) : p (p), q (q), origin (e) {
+Edge::Edge (Pt a, Pt b, halfEdge* e) : p (a), q (b), origin (e) {
 	if (p > q) swap (p, q);
 	A = p.y - q.y;
 	B = q.x - p.x;
 	C = -p.x * A - p.y * B;
 }
 
-Edge::Edge (const halfEdge& e) : p (e.p), q (e.q), origin (NULL) {}
+Edge::Edge (const halfEdge& e) : p (e.p), q (e.q), origin (NULL) {
+	if (p > q) swap (p, q);
+
+	A = p.y - q.y;
+	B = q.x - p.x;
+	C = -p.x * A - p.y * B;	
+}
 
 bool Edge::operator == (const Edge& b) const {
 	return (p - b.p).dist () < EPS && (q - b.q).dist () < EPS;
@@ -90,11 +102,12 @@ bool lex (const Edge& a, const Edge& b) {
 	return tie (a.p, a.q) < tie (b.p, b.q);
 }
 
+inline bool up (const Pt& p) {
+  return p.y > 0 or (p.y == 0 and p.x >= 0);
+}
+
 bool _radialComp (const Pt& a, const Pt& b) {
-	if (a.x < 0 && b.x >= 0) return false;
-	if (a.x >= 0 && b.x < 0) return true;
-	if (a.x == 0 && b.x == 0) return a.y < b.y;
-	return a.cross (b) < 0;
+	return up(a) == up(b) ? a.x * b.y < a.y * b.x : up(a) > up(b);
 }
 
 bool intersect (const Edge& a, const Edge& b, double y, Pt& r) {
@@ -133,25 +146,24 @@ vector <Edge> resolveOverlap (vector <Edge> e) {
 
 	for (auto x : e) {
 		double A = x.A, B = x.B, C = x.C;
-		if (A) A /= A, B /= A, C /= A;
-		else B /= B, C /= B;
+		if (A) B /= A, C /= A, A /= A;
+		else C /= B, B /= B;
 		vector <double> v {A, B, C};
-		cout << v[0] << ' ' << v[1] << ' ' << v[2] << endl;
 		m[v].push_back ({x.p, true});
 		m[v].push_back ({x.q, false});
 	}
 
 	for (auto a : m) {
-		cout << a.first[0] << ' ' << a.first[1] << ' ' << a.first[2] << endl;
 		auto& v = a.second;
 		sort (v.begin(), v.end());
 		for (int i = 0; i < v.size (); i++) {
 			if (v[i].second) cnt++;
 			else cnt--;
 			if (cnt) {
-				if (v[i].first != v[i+1].first)
+				if (v[i].first != v[i+1].first) {
 					ans.push_back (Edge (v[i].first, v[i+1].first, NULL));
-				cout << v[i].first.x << ' ' << v[i].first.y << ' ' << v[i+1].first.x << ' ' << v[i+1].first.y << endl;
+					report (ans.back ());
+				}
 			}
 		}
 	}
@@ -160,7 +172,7 @@ vector <Edge> resolveOverlap (vector <Edge> e) {
 }
 
 pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
-	v = resolveOverlap (v);
+	//v = resolveOverlap (v);
 	vector <Pt> res;
 	vector <Edge> res2;
 	map < Pt, vector <Edge> > start, inter, end;
@@ -174,6 +186,14 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 		q.insert (a.q);
 	}
 
+	for (auto& a : start) {
+		sort (a.second.begin(), a.second.end(), lex);
+	}
+
+	for (auto& a : end) {
+		sort (a.second.begin(), a.second.end(), lex);
+	}
+
 	while (!q.empty ()) {
 		auto x = *q.begin ();
 
@@ -182,20 +202,17 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 			if (res.empty () || res.back () != x) res.push_back (x);
 			if (start[x].size () > 1) res.push_back (x);
 			for (auto a : start[x]) {
-				cout << '+' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << ' ' << cur.x << ' ' << cur.y << endl;
 				auto it = s.insert (a).first;
 				auto pr = prev_it (it, s), nx = next_it (it, s);
 				Pt r;
 
 				if (pr != s.end () && intersect (*it, *pr, x.y, r)) {
-					//cout << "a!" << endl;
 					inter[r].push_back (*it);
 					inter[r].push_back (*pr);
 					q.insert (r);
 				}
 
 				if (nx != s.end () && intersect (*nx, *it, x.y, r)) {
-					//cout << "a!" << endl;
 					inter[r].push_back (*it);
 					inter[r].push_back (*nx);
 					q.insert (r);
@@ -204,21 +221,14 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 			start.erase (x);
 		}
 
-		for (auto b : s)
-			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
-		cout << endl;
-
 		if (inter.count (x)) {
 			if (res.empty () || res.back () != x) res.push_back (x);
 			sort (inter[x].begin(), inter[x].end(), lex);
 			int sz = unique (inter[x].begin(), inter[x].end()) - inter[x].begin ();
 			inter[x].resize (sz);
 			for (auto a : inter[x]) {
-				if (s.find (a) == s.end ()) cout << "NOT IN SET\n";
-				cout << 'X' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 				if (s.count (a) && (x - a.p).dist () >= EPS) res2.push_back (Edge (a.p, x, a.origin));
 				s.erase (a);
-				cout << s.size () << endl;
 			}
 
 			for (auto a : inter[x]) {
@@ -229,14 +239,12 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 				Pt r;
 
 				if (pr != s.end () && intersect (*it, *pr, x.y, r)) {
-					//cout << "a!" << endl;
 					inter[r].push_back (*it);
 					inter[r].push_back (*pr);
 					q.insert (r);
 				}
 
 				if (nx != s.end () && intersect (*nx, *it, x.y, r)) {
-					//cout << "a!" << endl;
 					inter[r].push_back (*it);
 					inter[r].push_back (*nx);
 					q.insert (r);
@@ -244,21 +252,15 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 
 				end[a.q].push_back (Edge (x, a.q, a.origin));
 			}
-			ins = false;
 
 			inter.erase (x);
 		}
-
-		for (auto b : s)
-			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
-		cout << endl;
 
 		if (end.count (x)) {
 			if (res.empty () || res.back () != x) res.push_back (x);
 			Edge ex;
 			for (auto a : end[x]) {
 				ex = a;
-				cout << '-' << ' ' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 				if (s.find (a) != s.end () && (a.q - a.p).dist () >= EPS) res2.push_back (a);
 				s.erase (a);
 			}
@@ -275,10 +277,6 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 			}
 			end.erase (x);
 		}
-		cout << cur.x << ' ' << cur.y << ' ' << "AE \n";
-		cout << q.size () << endl;
-		for (auto b : s)
-			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
 		q.erase (q.begin ());
 	}
 	sort (res.begin(), res.end());
@@ -299,7 +297,6 @@ map <Pt, halfEdge*> findClosest (vector <halfEdge*> edges, vector <Pt> v) {
 	s.insert (border);
 
 	for (auto a : edges) {
-		if (a -> p > a -> q) swap (a -> p, a -> q);
 		e.push_back (Edge (a -> p, a -> q, a));
 		assert (e.back ().p < e.back ().q);
 	}
@@ -309,22 +306,17 @@ map <Pt, halfEdge*> findClosest (vector <halfEdge*> edges, vector <Pt> v) {
 		end[a.q.y].push_back (a);
 		q.insert (a.p.y);
 		q.insert (a.q.y);
-		cout << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 	}
-	cout << endl;
 
 	for (auto a : v) {
-		cout << a.x << ' ' << a.y << endl;
 		points[a.y].push_back (a);
 		q.insert (a.y);
 	}
 
 	for (auto x : q) {
 		cur = Pt (0, x);
-		cout << "Sweeping line at: " << x << endl;
 		if (start.count (x)) {
 			for (auto a : start[x]) {
-				cout << '+' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 				s.insert (a);
 			}
 		}
@@ -332,19 +324,13 @@ map <Pt, halfEdge*> findClosest (vector <halfEdge*> edges, vector <Pt> v) {
 		if (points.count (x)) {
 			for (auto a : points[x]) {
 				auto it = s.lower_bound (Edge (a.x, a.y, a.x - 1, a.y + EPS));
-				it--;
-				cout << '/' << a.x << ' ' << a.y << ' ' << it -> p.x << ' ' << it -> p.y << ' ' << it -> q.x << ' ' << it -> q.y << endl;
+				it--; 
 				res[a] = it -> origin;
 			}
 		}
 
-		for (auto b : s)
-			cout << "Set: " << b.p.x << ' ' << b.p.y << ' ' << b.q.x << ' ' << b.q.y << endl;
-		cout << endl;
-
 		if (end.count (x)) {
 			for (auto a : end[x]) {
-				cout << '-' << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 				s.erase (a);
 			}
 		}

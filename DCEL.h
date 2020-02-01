@@ -27,7 +27,7 @@ struct halfEdge {
 	halfEdge *twin, *next, *prev;
 	Face* incidentFace;
 	Vertex* origin;
-	bool is_a, is_b;
+	Face *is_a, *is_b;
 
 	halfEdge (Pt p, Pt q) : p (p), q (q), incidentFace (NULL) {}
 	
@@ -35,7 +35,8 @@ struct halfEdge {
 };
 
 struct Face {
-	bool painted, is_a, is_b;
+	bool painted;
+	Face *is_a, *is_b;
 	halfEdge* outer;
 	std::vector <halfEdge*> inner;
 	halfEdge* leftmost;
@@ -64,6 +65,7 @@ struct DCEL {
 	std::vector <Vertex*> v;
 	std::vector <halfEdge*> e;
 	std::vector <Face*> f;
+	Face* outer_bound;
 
 	~DCEL () {
 		for (auto a : v) delete a;

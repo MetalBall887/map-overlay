@@ -172,7 +172,7 @@ vector <Edge> resolveOverlap (vector <Edge> e) {
 }
 
 pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
-	//v = resolveOverlap (v);
+	v = resolveOverlap (v);
 	vector <Pt> res;
 	vector <Edge> res2;
 	map < Pt, vector <Edge> > start, inter, end;

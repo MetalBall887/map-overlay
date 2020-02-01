@@ -8,6 +8,11 @@ bool radialComp (halfEdge* a, halfEdge* b) {
 }
 
 DCEL construct (std::vector <Edge> e) {
+
+	e.push_back (Edge (1e5, 1e5, -1e5, 1e5));
+	e.push_back (Edge (-1e5, 1e5, -1e5, -1e5));
+	e.push_back (Edge (-1e5, -1e5, 1e5, -1e5));
+	e.push_back (Edge (1e5, -1e5, 1e5, 1e5));
 	auto res = lineSegInt (e);
 
 	DCEL D;

@@ -1,14 +1,14 @@
-#include "DCEL.h"
+#include "DCELHandler.h"
 
 using namespace std;
 
 Pt cur;
 
-void report (halfEdge* a) {
+void DCELHandler::report (halfEdge* a) {
 	cout << a -> p.x << ' ' << a -> p.y << ' ' << a -> q.x << ' ' << a -> q.y << endl;
 }
 
-void report (Edge a) {
+void DCELHandler::report (Edge a) {
 	cout << a.p.x << ' ' << a.p.y << ' ' << a.q.x << ' ' << a.q.y << endl;
 }
 
@@ -98,19 +98,19 @@ bool Edge::operator < (const Edge& b) const {
 	}
 }
 
-bool lex (const Edge& a, const Edge& b) {
+bool DCELHandler::lex (const Edge& a, const Edge& b) {
 	return tie (a.p, a.q) < tie (b.p, b.q);
 }
 
-inline bool up (const Pt& p) {
+inline bool DCELHandler::up (const Pt& p) {
   return p.y > 0 or (p.y == 0 and p.x >= 0);
 }
 
-bool _radialComp (const Pt& a, const Pt& b) {
+bool DCELHandler::_radialComp (const Pt& a, const Pt& b) {
 	return up(a) == up(b) ? a.x * b.y < a.y * b.x : up(a) > up(b);
 }
 
-bool intersect (const Edge& a, const Edge& b, double y, Pt& r) {
+bool DCELHandler::intersect (const Edge& a, const Edge& b, double y, Pt& r) {
 	Pt r1, r2;
 	int res = segmentIntersection (a.p, a.q, b.p, b.q, r1, r2);
 	r = r1;
@@ -118,28 +118,18 @@ bool intersect (const Edge& a, const Edge& b, double y, Pt& r) {
 	return false;
 }
 
-decltype (auto) next_it (set <Edge> :: iterator it, set <Edge>& s) {
+decltype (auto) DCELHandler::next_it (set <Edge> :: iterator it, set <Edge>& s) {
 	it++;
 	return it;
 }
 
-decltype (auto) prev_it (set <Edge> :: iterator it, set <Edge>& s) {
+decltype (auto) DCELHandler::prev_it (set <Edge> :: iterator it, set <Edge>& s) {
 	if (it == s.begin ()) return s.end ();
 	it--;
 	return it;
 }
 
-struct comp_triplets {
-	bool operator () (const vector <double>& a, const vector <double>& b) const {
-		for (int i = 0; i < 3; i++) {
-			if (a[i] + EPS < b[i]) return true;
-			if (abs (a[i] - b[i]) > EPS) return false;
-		}
-		return false;
-	}
-};
-
-vector <Edge> resolveOverlap (vector <Edge> e) {
+vector <Edge> DCELHandler::resolveOverlap (vector <Edge> e) {
 	vector <Edge> ans;
 	map <vector <double>, vector<pair <Pt, bool>>, comp_triplets> m;
 	int cnt = 0;
@@ -160,10 +150,8 @@ vector <Edge> resolveOverlap (vector <Edge> e) {
 			if (v[i].second) cnt++;
 			else cnt--;
 			if (cnt) {
-				if (v[i].first != v[i+1].first) {
+				if (v[i].first != v[i+1].first) 
 					ans.push_back (Edge (v[i].first, v[i+1].first, NULL));
-					report (ans.back ());
-				}
 			}
 		}
 	}
@@ -171,7 +159,7 @@ vector <Edge> resolveOverlap (vector <Edge> e) {
 	return ans;
 }
 
-pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
+pair < vector <Pt>, vector <Edge> > DCELHandler::lineSegInt (vector <Edge> v) {
 	v = resolveOverlap (v);
 	vector <Pt> res;
 	vector <Edge> res2;
@@ -184,14 +172,6 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 		end[a.q].push_back (a);
 		q.insert (a.p);
 		q.insert (a.q);
-	}
-
-	for (auto& a : start) {
-		sort (a.second.begin(), a.second.end(), lex);
-	}
-
-	for (auto& a : end) {
-		sort (a.second.begin(), a.second.end(), lex);
 	}
 
 	while (!q.empty ()) {
@@ -230,8 +210,9 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 				if (s.count (a) && (x - a.p).dist () >= EPS) res2.push_back (Edge (a.p, x, a.origin));
 				s.erase (a);
 			}
-
-			for (auto a : inter[x]) {
+			int c = inter[x].size ();
+			for (int i = 0; i < c; i++) {
+				auto a = inter[x][i];
 				if ((a.q - x).dist () < EPS) continue;
 				auto it = s.insert (Edge (x, a.q, a.origin)).first;
 
@@ -286,7 +267,7 @@ pair < vector <Pt>, vector <Edge> > lineSegInt (vector <Edge> v) {
 	return make_pair (res, res2);
 }
 
-map <Pt, halfEdge*> findClosest (vector <halfEdge*> edges, vector <Pt> v) {
+map <Pt, halfEdge*> DCELHandler::findClosest (vector <halfEdge*> edges, vector <Pt> v) {
 	vector <Edge> e;
 	set <double> q;
 	set <Edge> s;
@@ -323,8 +304,8 @@ map <Pt, halfEdge*> findClosest (vector <halfEdge*> edges, vector <Pt> v) {
 
 		if (points.count (x)) {
 			for (auto a : points[x]) {
-				auto it = s.lower_bound (Edge (a.x, a.y, a.x - 1, a.y + EPS));
-				it--; 
+				auto it = s.lower_bound (Edge (a.x, a.y, a.x - 1, a.y + 0.005));
+				it--;
 				res[a] = it -> origin;
 			}
 		}

@@ -27,16 +27,17 @@ struct halfEdge {
 	halfEdge *twin, *next, *prev;
 	Face* incidentFace;
 	Vertex* origin;
-	Face *is_a, *is_b;
+	Face *to_a, *to_b;
 
-	halfEdge (Pt p, Pt q) : p (p), q (q), incidentFace (NULL) {}
+	halfEdge (Pt p, Pt q) 
+		: p (p), q (q), incidentFace (NULL), to_a (NULL), to_b (NULL) {}
 	
 	halfEdge () : incidentFace (NULL) {}
 };
 
 struct Face {
 	bool painted;
-	Face *is_a, *is_b;
+	Face *to_a, *to_b;
 	halfEdge* outer;
 	std::vector <halfEdge*> inner;
 	halfEdge* leftmost;

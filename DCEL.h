@@ -48,7 +48,6 @@ struct Face {
 struct Vertex {
 	Pt p;
 	std::vector <halfEdge*> incident;
-
 	Vertex (Pt p) : p (p) {}
 
 	bool operator < (const Vertex& b) const {
@@ -66,10 +65,30 @@ struct DCEL {
 	std::vector <Face*> f;
 	Face* outer_bound;
 
+	DCEL () {}
+
 	~DCEL () {
 		for (auto a : v) delete a;
 		for (auto a : e) delete a;
 		for (auto a : f) delete a;
 		v.clear (), e.clear (), f.clear ();
+	}
+
+	DCEL (const DCEL&& other) {
+		v = other.v;
+		e = other.e;
+		f = other.f;
+		outer_bound = other.outer_bound;
+	}
+
+	DCEL (const DCEL& other);
+	DCEL& operator= (const DCEL& other) {
+		if (this == &other) return *this;
+		DCEL tmp (other);
+		std::swap (v, tmp.v);
+		std::swap (e, tmp.e);
+		std::swap (f, tmp.f);
+		outer_bound = other.outer_bound;
+		return *this;
 	}
 };

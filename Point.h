@@ -11,8 +11,6 @@
 #include <map>
 #define EPS 1e-6
 
-using namespace std;
-
 template <class T>
 struct Point {
 	typedef Point P;

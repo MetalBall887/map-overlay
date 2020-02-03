@@ -1,8 +1,7 @@
 #include "DCELHandler.h"
 
 using namespace std;
-
-Pt cur;
+static Pt cur;
 
 void DCELHandler::report (halfEdge* a) {
 	cout << a -> p.x << ' ' << a -> p.y << ' ' << a -> q.x << ' ' << a -> q.y << endl;

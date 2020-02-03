@@ -141,8 +141,9 @@ DCEL DCELHandler::construct (std::vector <Edge> e) {
 		for (auto to : g[x]) {
 			q.push ({to, p});
 		}
-	}
 
+		if (x != p) delete x;
+	}
 
 	D.f.clear ();
 
@@ -151,6 +152,23 @@ DCEL DCELHandler::construct (std::vector <Edge> e) {
 
 
 	return D;
+}
+
+DCEL::DCEL (const DCEL& other) {
+	if (this == &other) return;
+	vector <Edge> v;
+	for (auto e : other.e) {
+		if (e -> p < e -> q)
+			v.push_back (Edge (e -> p, e -> q, NULL));
+	}
+
+	DCELHandler make;
+
+	auto A = make.construct (v);
+	swap (this -> v, A.v);
+	swap (this -> e, A.e);
+	swap (this -> f, A.f);
+	outer_bound = other.outer_bound;
 }
 
 void DCELHandler::fill (DCEL& D, vector <Pt> p) {

@@ -1,7 +1,5 @@
 #include "Point.h"
 
-typedef Point <double> Pt;
-
 struct Face;
 struct halfEdge;
 struct Vertex;

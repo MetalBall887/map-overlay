@@ -1,17 +1,4 @@
-#pragma once
-
-#include <iostream>
-#include <cstdlib>
-#include <vector>
-#include <queue>
-#include <cassert>
-#include <algorithm>
-#include <set>
-#include <cmath>
-#include <map>
-#define EPS 1e-6
-
-using namespace std;
+#include "DCELHandler.h"
 
 template <class T>
 struct Point {
@@ -39,5 +26,3 @@ struct Point {
 	P rotate (double a) const {
 		return P (x * cos (a) - y * sin (a), x * sin (a) + y * cos (a)); }
 };
-
-typedef Point <double> Pt;

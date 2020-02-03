@@ -1,4 +1,6 @@
+#pragma once
 #include "DCEL.h"
+
 using namespace std;
 
 class DCELHandler {
